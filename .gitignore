@@ -37,3 +37,6 @@ htmlcov/
 
 # Streamlit
 .streamlit/secrets.toml
+
+source/소상공인시장진흥공단_상가(상권)정보_서울_202603.csv
+source/시군구_성_월별_출생_20260730171943.csv

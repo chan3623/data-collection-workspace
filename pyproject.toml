@@ -6,7 +6,9 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "beautifulsoup4>=4.15.0",
+    "folium>=0.20.0",
     "matplotlib>=3.11.1",
+    "missingno>=0.5.2",
     "npmpy>=0.1.6",
     "numpy>=2.5.1",
     "openpyxl>=3.1.5",
