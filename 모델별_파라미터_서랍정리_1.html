@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>모델별로 신경 쓸 파라미터만 — 서랍 정리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4F6EF;
+    --paper-raised:#FFFFFF;
+    --ink:#20261E;
+    --ink-soft:#4B5347;
+    --ink-mute:#7C8471;
+    --line:#D7DBCA;
+    --line-strong:#AEB69C;
+    --spruce:#1F6F5C;
+    --spruce-deep:#123F34;
+    --spruce-tint:#E3EFE9;
+    --amber:#B8792E;
+    --amber-tint:#F6EBDA;
+    --amber-deep:#6E4419;
+    --coral:#B5503A;
+    --coral-tint:#F7E4DE;
+    --coral-deep:#6B2C1E;
+    --row-alt:#EFF2E7;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:5rem 2rem 8rem;}
+
+  .hero{padding-bottom:2rem;border-bottom:1px solid var(--line);margin-bottom:1rem;}
+  .hero .eyebrow{
+    font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:.06em;
+    color:var(--spruce);text-transform:uppercase;margin:0 0 1.1rem;
+  }
+  .hero h1{
+    font-family:'Fraunces',serif;font-weight:500;font-size:clamp(2rem,4.6vw,2.9rem);
+    line-height:1.15;letter-spacing:-.01em;margin:0 0 1.1rem;color:var(--spruce-deep);
+  }
+  .hero p{font-size:16px;line-height:1.75;color:var(--ink-soft);max-width:640px;margin:0 0 .9rem;}
+  .hero p:last-child{margin-bottom:0;}
+
+  nav.jump{
+    display:flex;flex-wrap:wrap;gap:.55rem;margin-top:1.8rem;
+  }
+  nav.jump a{
+    font-family:'JetBrains Mono',monospace;font-size:12px;
+    padding:.42rem .8rem;border:1px solid var(--line-strong);border-radius:20px;
+    color:var(--spruce-deep);text-decoration:none;background:var(--paper-raised);
+    transition:background .15s ease, border-color .15s ease;
+  }
+  nav.jump a:hover{background:var(--spruce-tint);border-color:var(--spruce);}
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:1.2rem;
+  }
+  @media (max-width:760px){ .grid{grid-template-columns:1fr;} }
+
+  .card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:1.3rem 1.4rem 1.4rem;
+    display:flex;
+    flex-direction:column;
+  }
+  .card .top{
+    display:flex;justify-content:space-between;align-items:flex-start;
+    margin-bottom:.35rem;
+  }
+  .card h2{
+    font-family:'Fraunces',serif;font-weight:500;font-size:1.28rem;
+    margin:0;color:var(--spruce-deep);letter-spacing:-.005em;
+  }
+  .card .task{
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;
+    padding:.25rem .55rem;border-radius:20px;white-space:nowrap;flex-shrink:0;
+    margin-left:.6rem;
+  }
+  .task.clf{background:var(--spruce-tint);color:var(--spruce-deep);}
+  .task.reg{background:var(--amber-tint);color:var(--amber-deep);}
+  .task.both{background:var(--coral-tint);color:var(--coral-deep);}
+
+  .card .desc{
+    font-size:13px;line-height:1.6;color:var(--ink-mute);margin:0 0 1rem;
+  }
+
+  .card code.sig{
+    display:block;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+    background:var(--spruce-deep);
+    color:#DCEDE5;
+    padding:.7rem .85rem;
+    border-radius:8px;
+    margin:0 0 1rem;
+    overflow-x:auto;
+    white-space:pre;
+    line-height:1.55;
+  }
+
+  .ptable{width:100%;border-collapse:collapse;font-size:12.3px;margin-bottom:.9rem;}
+  .ptable thead th{
+    text-align:left;font-family:'JetBrains Mono',monospace;font-weight:500;font-size:10px;
+    text-transform:uppercase;letter-spacing:.03em;color:var(--ink-mute);
+    padding:.25rem .4rem .35rem .1rem;border-bottom:1px solid var(--line-strong);
+  }
+  .ptable td{padding:.42rem .4rem .42rem .1rem;border-bottom:1px solid var(--line);vertical-align:top;}
+  .ptable tr:last-child td{border-bottom:none;}
+  .ptable td.pname{
+    width:28%;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--spruce-deep);
+    font-weight:500;
+  }
+  .ptable td.pdesc{width:46%;color:var(--ink-soft);}
+  .ptable td.pval{
+    width:26%;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--amber-deep);
+  }
+
+  .skip{
+    margin-top:auto;
+    padding-top:.75rem;
+    border-top:1px dashed var(--line);
+    font-size:12px;
+    line-height:1.6;
+    color:var(--ink-mute);
+  }
+  .skip b{color:var(--coral-deep);font-weight:600;}
+
+  .section-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--ink-mute);
+    margin:2.6rem 0 1rem;
+    padding-bottom:.6rem;
+    border-bottom:1px solid var(--line);
+    scroll-margin-top:1.5rem;
+  }
+  .section-label:first-of-type{margin-top:0;}
+
+  .pipeline-card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-left:3px solid var(--amber);
+    border-radius:0 14px 14px 0;
+    padding:1.4rem 1.5rem 1.5rem;
+    margin-bottom:1.2rem;
+  }
+  .pipeline-card h3{
+    font-family:'Fraunces',serif;font-weight:500;font-size:1.15rem;
+    margin:0 0 .5rem;color:var(--amber-deep);
+  }
+  .pipeline-card p.pdesc-text{font-size:13.5px;line-height:1.7;color:var(--ink-soft);margin:0 0 1rem;}
+  .pipeline-card pre{
+    background:var(--spruce-deep);color:#E9F3EE;padding:1.05rem 1.2rem;border-radius:9px;
+    overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.65;margin:0;
+  }
+  .pipeline-card .why{
+    margin-top:.9rem;padding-top:.8rem;border-top:1px dashed var(--line);
+    font-size:13px;line-height:1.7;color:var(--ink-mute);
+  }
+  .pipeline-card .why b{color:var(--ink-soft);font-weight:600;}
+
+  .closer{
+    margin-top:3.2rem;
+    padding:2rem 2.1rem;
+    background:var(--spruce-deep);
+    border-radius:14px;
+    color:#EAF2ED;
+  }
+  .closer .eyebrow{
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:.06em;
+    text-transform:uppercase;color:#8FC4B0;margin:0 0 .8rem;
+  }
+  .closer p{font-family:'Fraunces',serif;font-size:1.1rem;line-height:1.65;margin:0;font-weight:400;}
+
+  @media print{ body{background:#fff;} .closer{background:var(--spruce-tint);color:var(--spruce-deep);} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <p class="eyebrow">SKN AI 35기 · 학습 노트</p>
+    <h1>모델마다 서랍이 다르다</h1>
+    <p>모델을 바꿀 때마다 신경 써야 할 파라미터 전체가 늘어나는 게 아니라, 그 모델의 서랍 하나만 열면 된다. 다른 서랍(솔버, 활성함수, 트리 개수 등)은 애초에 이 모델과 상관없는 것들이다.</p>
+    <p>각 파라미터마다 실전에서 자주 쓰는 예시값도 같이 넣었고, 마지막엔 Pipeline + GridSearchCV로 이 값들을 자동 탐색하는 방법도 정리했다.</p>
+    <nav class="jump">
+      <a href="#linear">회귀·선형</a>
+      <a href="#distance">거리기반</a>
+      <a href="#prob">확률기반</a>
+      <a href="#tree">트리·앙상블</a>
+      <a href="#nn">신경망</a>
+      <a href="#pipeline">Pipeline·GridSearch</a>
+    </nav>
+  </div>
+
+  <p class="section-label" id="linear">회귀 · 선형 계열</p>
+  <div class="grid">
+
+    <div class="card">
+      <div class="top"><h2>Linear Regression</h2><span class="task reg">회귀</span></div>
+      <p class="desc">특성과 타깃 사이의 직선 관계를 찾는 가장 기본적인 회귀 모델.</p>
+      <code class="sig">LinearRegression()</code>
+      <table class="ptable">
+        <thead><tr><th>파라미터</th><th>의미</th><th>예시값</th></tr></thead>
+        <tr><td class="pname">fit_intercept</td><td class="pdesc">절편(y절편) 학습 여부</td><td class="pval">True (기본)</td></tr>
+      </table>
+      <p class="skip">건드릴 파라미터가 사실상 거의 없음. <b>과적합 방지가 필요하면</b> 아래 Ridge/Lasso로 넘어가는 게 정석.</p>
+    </div>
+
+    <div class="card">
+      <div class="top"><h2>Ridge / Lasso</h2><span class="task reg">회귀</span></div>
+      <p class="desc">Linear Regression에 규제(정규화)를 더해 과적합을 억누르는 버전.</p>
+      <code class="sig">Ridge(alpha=1.0)
+Lasso(alpha=1.0)</code>
+      <table class="ptable">
+        <thead><tr><th>파라미터</th><th>의미</th><th>예시값</th></tr></thead>
+        <tr><td class="pname">alpha</td><td class="pdesc">규제 강도. 클수록 계수를 더 강하게 누름</td><td class="pval">0.01, 0.1, 1, 10</td></tr>
+      </table>
+      <p class="skip">Ridge는 계수를 0에 가깝게, Lasso는 아예 0으로 만들어 특성 선택 효과도 있음. <b>솔버/활성함수 해당 없음.</b></p>
+    </div>
+
+    <div class="card">
+      <div class="top"><h2>Logistic Regression</h2><span class="task clf">분류</span></div>
+      <p class="desc">시그모이드로 출력을 0~1 확률로 바꿔서 분류하는 선형모델.</p>
+      <code class="sig">LogisticRegression(
+  C=1.0, penalty='l2',
+  solver='lbfgs', max_iter=1000
+)</code>
+      <table class="ptable">
+        <thead><tr><th>파라미터</th><th>의미</th><th>예시값</th></tr></thead>
+        <tr><td class="pname">C</td><td class="pdesc">규제 강도. 작을수록 규제 강함</td><td class="pval">0.01, 0.1, 1, 10, 100</td></tr>
+        <tr><td class="pname">penalty</td><td class="pdesc">규제 종류</td><td class="pval">'l1', 'l2', 'elasticnet'</td></tr>
+        <tr><td class="pname">solver</td><td class="pdesc">최적화 알고리즘. penalty에 따라 지원 여부 다름</td><td class="pval">'lbfgs', 'liblinear'</td></tr>
+        <tr><td class="pname">max_iter</td><td class="pdesc">최대 반복 횟수</td><td class="pval">1000, 5000</td></tr>
+      </table>
+      <p class="skip"><b>활성함수는 시그모이드 하나로 고정</b>이라 고민 대상이 아님. 트리 개수, 지니 불순도 해당 없음.</p>
+    </div>
+
+  </div>
+
+  <p class="section-label" id="distance">거리 기반</p>
+  <div class="grid">
+
+    <div class="card">
+      <div class="top"><h2>KNN</h2><span class="task both">분류·회귀</span></div>
+      <p class="desc">가까운 K개 이웃을 보고 다수결(분류) 또는 평균(회귀)으로 예측.</p>
+      <code class="sig">KNeighborsClassifier(
+  n_neighbors=5, weights='uniform',
+  metric='euclidean'
+)</code>
+      <table class="ptable">
+        <thead><tr><th>파라미터</th><th>의미</th><th>예시값</th></tr></thead>
+        <tr><td class="pname">n_neighbors</td><td class="pdesc">이웃 개수(K)</td><td class="pval">3, 5, 7, 9, 11</td></tr>
+        <tr><td class="pname">weights</td><td class="pdesc">uniform / distance</td><td class="pval">'uniform', 'distance'</td></tr>
+        <tr><td class="pname">metric</td><td class="pdesc">거리 계산 방식</td><td class="pval">'euclidean', 'manhattan'</td></tr>
+        <tr><td class="pname">p</td><td class="pdesc">민코프스키 거리 지수. 1=맨하탄, 2=유클리디안</td><td class="pval">1, 2</td></tr>
+      </table>
+      <p class="skip"><b>학습 과정 자체가 없음(lazy learning)</b> — 반복횟수, 깊이 등 학습 관련 파라미터가 아예 존재하지 않음. 스케일링은 필수.</p>
+    </div>
+
+    <div class="card">
+      <div class="top"><h2>SVM</h2><span class="task both">분류·회귀</span></div>
+      <p class="desc">마진을 최대화하는 경계를 찾는 모델. 커널트릭으로 비선형도 처리.</p>
+      <code class="sig">SVC(
+  C=1.0, kernel='rbf', gamma='scale'
+)</code>
+      <table class="ptable">
+        <thead><tr><th>파라미터</th><th>의미</th><th>예시값</th></tr></thead>
+        <tr><td class="pname">C</td><td class="pdesc">규제 강도. 작을수록 마진을 넓게</td><td class="pval">0.1, 1, 10, 100</td></tr>
+        <tr><td class="pname">kernel</td><td class="pdesc">데이터가 나뉘는 형태에 맞는 커널</td><td class="pval">'linear', 'rbf', 'poly'</td></tr>
+        <tr><td class="pname">gamma</td><td class="pdesc">rbf 커널의 곡률. 클수록 복잡한 경계</td><td class="pval">'scale', 0.01, 0.1, 1</td></tr>
+      </table>
+      <p class="skip">트리 개수, 지니 불순도, 활성함수 <b>모두 해당 없음</b>. 스케일링 필수.</p>
+    </div>
+
+  </div>
+
+  <p class="section-label" id="prob">확률 기반</p>
+  <div class="grid">
+
+    <div class="card">
+      <div class="top"><h2>Naive Bayes</h2><span class="task clf">분류</span></div>
+      <p class="desc">베이즈 정리 + 각 특성이 독립이라는 가정으로 빠르게 확률 계산.</p>
+      <code class="sig">GaussianNB(var_smoothing=1e-9)</code>
+      <table class="ptable">
+        <thead><tr><th>파라미터</th><th>의미</th><th>예시값</th></tr></thead>
+        <tr><td class="pname">var_smoothing</td><td class="pdesc">분산에 작은 값을 더해 수치 안정성 확보</td><td class="pval">1e-9, 1e-8, 1e-7</td></tr>
+      </table>
+      <p class="skip">파라미터가 사실상 거의 없어서 <b>가장 튜닝 부담이 적은 모델</b>. 트리·거리·신경망 관련 파라미터 전부 해당 없음.</p>
+    </div>
+
+    <div class="card">
+      <div class="top"><h2>LDA</h2><span class="task clf">분류</span></div>
+      <p class="desc">클래스 간 분산은 최대화, 클래스 내 분산은 최소화하는 방향으로 투영.</p>
+      <code class="sig">LinearDiscriminantAnalysis(
+  solver='svd', shrinkage=None
+)</code>
+      <table class="ptable">
+        <thead><tr><th>파라미터</th><th>의미</th><th>예시값</th></tr></thead>
+        <tr><td class="pname">solver</td><td class="pdesc">계산 방식</td><td class="pval">'svd', 'lsqr', 'eigen'</td></tr>
+        <tr><td class="pname">shrinkage</td><td class="pdesc">공분산 추정 안정화. lsqr/eigen에서만 사용</td><td class="pval">'auto', 0.1~0.9</td></tr>
+      </table>
+      <p class="skip">여기 나오는 <b>solver는 로지스틱회귀의 solver와 이름만 같을 뿐 완전히 다른 개념</b> — 헷갈리지 않게 주의.</p>
+    </div>
+
+  </div>
+
+  <p class="section-label" id="tree">트리 · 앙상블 계열</p>
+  <div class="grid">
+
+    <div class="card">
+      <div class="top"><h2>Decision Tree</h2><span class="task both">분류·회귀</span></div>
+      <p class="desc">조건으로 데이터를 계속 쪼개서 규칙을 만드는 모델.</p>
+      <code class="sig">DecisionTreeClassifier(
+  criterion='gini', max_depth=5,
+  min_samples_split=10
+)</code>
+      <table class="ptable">
+        <thead><tr><th>파라미터</th><th>의미</th><th>예시값</th></tr></thead>
+        <tr><td class="pname">criterion</td><td class="pdesc">분기 기준</td><td class="pval">'gini', 'entropy'</td></tr>
+        <tr><td class="pname">max_depth</td><td class="pdesc">트리 최대 깊이</td><td class="pval">3, 5, 10, None</td></tr>
+        <tr><td class="pname">min_samples_split</td><td class="pdesc">노드 분할 최소 샘플 수</td><td class="pval">2, 5, 10, 20</td></tr>
+        <tr><td class="pname">min_samples_leaf</td><td class="pdesc">리프 노드 최소 샘플 수</td><td class="pval">1, 5, 10</td></tr>
+      </table>
+      <p class="skip">스케일링 불필요. <b>솔버·활성함수 해당 없음.</b></p>
+    </div>
+
+    <div class="card">
+      <div class="top"><h2>Random Forest</h2><span class="task both">분류·회귀</span></div>
+      <p class="desc">결정트리 여러 개를 무작위로 만들어 다수결(분류)·평균(회귀)으로 합치는 배깅.</p>
+      <code class="sig">RandomForestClassifier(
+  n_estimators=100, max_depth=10,
+  max_features='sqrt', criterion='gini'
+)</code>
+      <table class="ptable">
+        <thead><tr><th>파라미터</th><th>의미</th><th>예시값</th></tr></thead>
+        <tr><td class="pname">n_estimators</td><td class="pdesc">트리 개수</td><td class="pval">100, 200, 500</td></tr>
+        <tr><td class="pname">max_depth</td><td class="pdesc">각 트리의 최대 깊이</td><td class="pval">5, 10, 20, None</td></tr>
+        <tr><td class="pname">max_features</td><td class="pdesc">분기마다 무작위로 볼 특성 개수</td><td class="pval">'sqrt', 'log2', 0.5</td></tr>
+        <tr><td class="pname">min_samples_split</td><td class="pdesc">Decision Tree와 동일</td><td class="pval">2, 5, 10</td></tr>
+        <tr><td class="pname">oob_score</td><td class="pdesc">자체 검증 점수 계산 여부</td><td class="pval">True / False</td></tr>
+      </table>
+      <p class="skip">Decision Tree 파라미터를 그대로 물려받고 앙상블용 파라미터만 추가됨. <b>솔버·활성함수 해당 없음.</b></p>
+    </div>
+
+    <div class="card">
+      <div class="top"><h2>XGBoost / LightGBM</h2><span class="task both">분류·회귀</span></div>
+      <p class="desc">트리를 순차적으로 이어붙이며 이전 오차를 보완하는 부스팅.</p>
+      <code class="sig">XGBClassifier(
+  n_estimators=200, max_depth=6,
+  learning_rate=0.1, subsample=0.8
+)</code>
+      <table class="ptable">
+        <thead><tr><th>파라미터</th><th>의미</th><th>예시값</th></tr></thead>
+        <tr><td class="pname">learning_rate</td><td class="pdesc">가장 중요. n_estimators와 트레이드오프</td><td class="pval">0.01, 0.05, 0.1, 0.3</td></tr>
+        <tr><td class="pname">n_estimators</td><td class="pdesc">부스팅 단계(트리) 개수</td><td class="pval">100, 300, 500, 1000</td></tr>
+        <tr><td class="pname">max_depth</td><td class="pdesc">RF보다 보통 얕게 잡음</td><td class="pval">3, 5, 6, 8</td></tr>
+        <tr><td class="pname">subsample</td><td class="pdesc">각 트리 학습에 쓸 데이터 비율</td><td class="pval">0.6, 0.8, 1.0</td></tr>
+        <tr><td class="pname">colsample_bytree</td><td class="pdesc">각 트리 학습에 쓸 특성 비율</td><td class="pval">0.6, 0.8, 1.0</td></tr>
+      </table>
+      <p class="skip">RF보다 튜닝 부담이 더 큼 — <b>learning_rate와 n_estimators를 세트로 조절</b>하는 게 핵심.</p>
+    </div>
+
+  </div>
+
+  <p class="section-label" id="nn">신경망 계열</p>
+  <div class="grid">
+
+    <div class="card">
+      <div class="top"><h2>MLPClassifier</h2><span class="task both">분류·회귀</span></div>
+      <p class="desc">입력층-은닉층-출력층 구조의 다층 퍼셉트론. 유일하게 활성함수·솔버가 등장하는 모델.</p>
+      <code class="sig">MLPClassifier(
+  hidden_layer_sizes=(100,),
+  activation='relu', solver='adam',
+  alpha=0.0001, max_iter=1000
+)</code>
+      <table class="ptable">
+        <thead><tr><th>파라미터</th><th>의미</th><th>예시값</th></tr></thead>
+        <tr><td class="pname">hidden_layer_sizes</td><td class="pdesc">은닉층 구조</td><td class="pval">(100,), (100,50), (64,32)</td></tr>
+        <tr><td class="pname">activation</td><td class="pdesc">활성화 함수</td><td class="pval">'relu', 'tanh', 'logistic'</td></tr>
+        <tr><td class="pname">solver</td><td class="pdesc">최적화 알고리즘</td><td class="pval">'adam', 'sgd', 'lbfgs'</td></tr>
+        <tr><td class="pname">alpha</td><td class="pdesc">L2 정규화 강도(C와 반대 방향)</td><td class="pval">0.0001, 0.001, 0.01</td></tr>
+        <tr><td class="pname">max_iter</td><td class="pdesc">최대 반복(epoch) 횟수</td><td class="pval">500, 1000, 2000</td></tr>
+      </table>
+      <p class="skip"><b>솔버·활성함수는 이 서랍에만 있는 개념</b>. 기본값(relu + adam)이면 웬만한 상황에서 무난하게 작동함.</p>
+    </div>
+
+  </div>
+
+  <p class="section-label" id="pipeline">Pipeline · GridSearchCV</p>
+
+  <div class="pipeline-card">
+    <h3>왜 Pipeline을 쓰나</h3>
+    <p class="pdesc-text">지금까지 전처리(스케일링·인코딩)와 모델 학습을 따로따로 코드로 짰는데, 이걸 하나로 묶어서 <b style="color:var(--ink);font-weight:600;">"전처리 → 모델"</b> 순서를 고정된 하나의 객체로 만드는 게 Pipeline이다. train에만 fit, test는 transform만 하는 규칙도 Pipeline이 자동으로 지켜준다 — data leakage를 원천 차단하는 효과가 있다.</p>
+    <pre><code>from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+
+pipe = Pipeline([
+    ('scaler', StandardScaler()),
+    ('model', RandomForestClassifier(random_state=42))
+])
+
+pipe.fit(X_train, y_train)          # scaler.fit_transform + model.fit 순서대로 자동 실행
+pipe.predict(X_test)                 # scaler.transform + model.predict 순서대로 자동 실행</code></pre>
+    <p class="why"><b>핵심:</b> <code style="background:var(--spruce-tint);color:var(--spruce-deep);padding:.05rem .35rem;border-radius:4px;">pipe.fit(X_train, y_train)</code> 한 줄이면, 내부적으로 scaler는 train으로만 fit되고 그 다음 model이 학습됨. test에 <code style="background:var(--spruce-tint);color:var(--spruce-deep);padding:.05rem .35rem;border-radius:4px;">predict</code>할 때도 scaler.transform이 자동으로 먼저 적용됨. 저번에 계속 강조한 "train만 fit_transform, test는 transform" 규칙을 실수할 여지 자체가 없어짐.</p>
+  </div>
+
+  <div class="pipeline-card">
+    <h3>수치형 · 범주형을 함께 — ColumnTransformer</h3>
+    <p class="pdesc-text">한 데이터셋에 수치형과 범주형이 섞여 있으면, 각각 다른 전처리(스케일링 vs 인코딩)를 적용해야 한다. <code style="background:var(--spruce-tint);color:var(--spruce-deep);padding:.05rem .35rem;border-radius:4px;">ColumnTransformer</code>로 컬럼별 처리를 나눠서 Pipeline 안에 넣는다.</p>
+    <pre><code>from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+
+num_cols = ['age', 'income']
+cat_cols = ['gender', 'region']
+
+preprocessor = ColumnTransformer([
+    ('num', StandardScaler(), num_cols),
+    ('cat', OneHotEncoder(handle_unknown='ignore'), cat_cols)
+])
+
+pipe = Pipeline([
+    ('preprocessor', preprocessor),
+    ('model', RandomForestClassifier(random_state=42))
+])
+
+pipe.fit(X_train, y_train)</code></pre>
+    <p class="why"><code style="background:var(--spruce-tint);color:var(--spruce-deep);padding:.05rem .35rem;border-radius:4px;">handle_unknown='ignore'</code>는 test에 train에서 못 본 범주가 나와도 에러 없이 넘어가게 해주는 안전장치. 실무에서 거의 항상 켜두는 옵션이다.</p>
+  </div>
+
+  <div class="pipeline-card">
+    <h3>GridSearchCV — Pipeline 안의 파라미터까지 자동 탐색</h3>
+    <p class="pdesc-text">위 표에서 정리한 "예시값" 후보들을 사람이 하나씩 손으로 바꿔가며 돌려보는 대신, GridSearchCV가 모든 조합을 자동으로 다 시도하고 교차검증까지 해서 최적값을 찾아준다. Pipeline 안에 있는 모델 파라미터는 <code style="background:var(--spruce-tint);color:var(--spruce-deep);padding:.05rem .35rem;border-radius:4px;">모델이름__파라미터명</code> 형태로 접근한다.</p>
+    <pre><code>from sklearn.model_selection import GridSearchCV
+
+param_grid = {
+    'model__n_estimators': [100, 200, 300],
+    'model__max_depth': [5, 10, 20, None],
+    'model__max_features': ['sqrt', 'log2']
+}
+
+grid = GridSearchCV(
+    pipe, param_grid,
+    cv=5, scoring='f1', n_jobs=-1
+)
+grid.fit(X_train, y_train)
+
+print(grid.best_params_)   # 가장 좋았던 조합
+print(grid.best_score_)    # 그때의 교차검증 점수
+best_model = grid.best_estimator_   # 최적 파라미터로 재학습된 최종 파이프라인</code></pre>
+    <p class="why"><b>'model__n_estimators'처럼 이름 앞에 파이프라인 단계명(여기선 'model')을 붙이는 이유:</b> Pipeline 안에 여러 단계가 있어서, GridSearchCV가 "어느 단계의 어떤 파라미터를 바꿀지" 구분해야 하기 때문이다. 전처리 단계(preprocessor)의 파라미터도 똑같이 <code style="background:var(--spruce-tint);color:var(--spruce-deep);padding:.05rem .35rem;border-radius:4px;">'preprocessor__num__...'</code> 식으로 접근 가능하다.</p>
+  </div>
+
+  <div class="pipeline-card">
+    <h3>탐색 공간이 넓으면 — RandomizedSearchCV</h3>
+    <p class="pdesc-text">파라미터 후보가 많아지면(예: XGBoost처럼 파라미터가 5개 이상) GridSearchCV는 모든 조합을 다 시도하느라 조합 수가 기하급수적으로 늘어난다. 이럴 땐 무작위로 일부 조합만 뽑아서 시도하는 RandomizedSearchCV가 훨씬 빠르다.</p>
+    <pre><code>from sklearn.model_selection import RandomizedSearchCV
+
+param_dist = {
+    'model__n_estimators': [100, 200, 300, 500],
+    'model__max_depth': [3, 5, 6, 8, 10],
+    'model__learning_rate': [0.01, 0.05, 0.1, 0.3]
+}
+
+search = RandomizedSearchCV(
+    pipe, param_dist,
+    n_iter=20, cv=5, scoring='f1',
+    random_state=42, n_jobs=-1
+)
+search.fit(X_train, y_train)</code></pre>
+    <p class="why"><code style="background:var(--spruce-tint);color:var(--spruce-deep);padding:.05rem .35rem;border-radius:4px;">n_iter=20</code>이면 가능한 모든 조합이 수백 개여도 그중 20개만 무작위로 뽑아서 시도한다. GridSearchCV보다 최적값을 놓칠 순 있지만, 훨씬 빠르게 "그럭저럭 좋은" 조합을 찾을 수 있다.</p>
+  </div>
+
+  <div class="closer">
+    <p class="eyebrow">기억할 것</p>
+    <p>모델을 바꿀 때마다 신경 쓸 파라미터가 계속 쌓이는 게 아니다. 지금 쓰는 모델의 서랍 하나만 열면 되고, 그 서랍 안 값들을 하나씩 손으로 바꿔볼 필요도 없다 — Pipeline에 담아서 GridSearchCV에 넘기면 조합 탐색은 컴퓨터가 대신 해준다.</p>
+  </div>
+
+</div>
+</body>
+</html>
