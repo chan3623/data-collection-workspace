@@ -1,0 +1,2054 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>머신러닝 종합 정리 — 전처리부터 모델·하이퍼파라미터·군집화까지</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --paper: #F4F6EF;
+            --paper-raised: #FFFFFF;
+            --ink: #20261E;
+            --ink-soft: #4B5347;
+            --ink-mute: #7C8471;
+            --line: #D7DBCA;
+            --line-strong: #AEB69C;
+            --spruce: #1F6F5C;
+            --spruce-deep: #123F34;
+            --spruce-tint: #E3EFE9;
+            --amber: #B8792E;
+            --amber-tint: #F6EBDA;
+            --amber-deep: #6E4419;
+            --coral: #B5503A;
+            --coral-tint: #F7E4DE;
+            --coral-deep: #6B2C1E;
+            --row-alt: #EFF2E7;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .wrap {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 5rem 2rem 8rem;
+        }
+
+        .hero {
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--line);
+            margin-bottom: 1rem;
+        }
+
+        .hero .eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12.5px;
+            letter-spacing: .06em;
+            color: var(--spruce);
+            text-transform: uppercase;
+            margin: 0 0 1.1rem;
+        }
+
+        .hero h1 {
+            font-family: 'Fraunces', serif;
+            font-weight: 500;
+            font-size: clamp(2rem, 4.6vw, 2.9rem);
+            line-height: 1.15;
+            letter-spacing: -.01em;
+            margin: 0 0 1.1rem;
+            color: var(--spruce-deep);
+        }
+
+        .hero p {
+            font-size: 16px;
+            line-height: 1.75;
+            color: var(--ink-soft);
+            max-width: 640px;
+            margin: 0 0 .9rem;
+        }
+
+        .hero p:last-child {
+            margin-bottom: 0;
+        }
+
+        nav.jump {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .55rem;
+            margin-top: 1.8rem;
+        }
+
+        nav.jump a {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            padding: .42rem .8rem;
+            border: 1px solid var(--line-strong);
+            border-radius: 20px;
+            color: var(--spruce-deep);
+            text-decoration: none;
+            background: var(--paper-raised);
+            transition: background .15s ease, border-color .15s ease;
+        }
+
+        nav.jump a:hover {
+            background: var(--spruce-tint);
+            border-color: var(--spruce);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.2rem;
+        }
+
+        @media (max-width:760px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--paper-raised);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 1.3rem 1.4rem 1.4rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: .35rem;
+        }
+
+        .card h2 {
+            font-family: 'Fraunces', serif;
+            font-weight: 500;
+            font-size: 1.28rem;
+            margin: 0;
+            color: var(--spruce-deep);
+            letter-spacing: -.005em;
+        }
+
+        .card .task {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10.5px;
+            padding: .25rem .55rem;
+            border-radius: 20px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            margin-left: .6rem;
+        }
+
+        .task.clf {
+            background: var(--spruce-tint);
+            color: var(--spruce-deep);
+        }
+
+        .task.reg {
+            background: var(--amber-tint);
+            color: var(--amber-deep);
+        }
+
+        .task.both {
+            background: var(--coral-tint);
+            color: var(--coral-deep);
+        }
+
+        .card .desc {
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--ink-mute);
+            margin: 0 0 1rem;
+        }
+
+        .card code.sig {
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11.5px;
+            background: var(--spruce-deep);
+            color: #DCEDE5;
+            padding: .7rem .85rem;
+            border-radius: 8px;
+            margin: 0 0 1rem;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.55;
+        }
+
+        .ptable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.3px;
+            margin-bottom: .9rem;
+        }
+
+        .ptable thead th {
+            text-align: left;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            color: var(--ink-mute);
+            padding: .25rem .4rem .35rem .1rem;
+            border-bottom: 1px solid var(--line-strong);
+        }
+
+        .ptable td {
+            padding: .42rem .4rem .42rem .1rem;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+        }
+
+        .ptable tr:last-child td {
+            border-bottom: none;
+        }
+
+        .ptable td.pname {
+            width: 28%;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--spruce-deep);
+            font-weight: 500;
+        }
+
+        .ptable td.pdesc {
+            width: 46%;
+            color: var(--ink-soft);
+        }
+
+        .ptable td.pval {
+            width: 26%;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--amber-deep);
+        }
+
+        .skip {
+            margin-top: auto;
+            padding-top: .75rem;
+            border-top: 1px dashed var(--line);
+            font-size: 12px;
+            line-height: 1.6;
+            color: var(--ink-mute);
+        }
+
+        .skip b {
+            color: var(--coral-deep);
+            font-weight: 600;
+        }
+
+        .section-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            color: var(--ink-mute);
+            margin: 2.6rem 0 1rem;
+            padding-bottom: .6rem;
+            border-bottom: 1px solid var(--line);
+            scroll-margin-top: 1.5rem;
+        }
+
+        .section-label:first-of-type {
+            margin-top: 0;
+        }
+
+        .pipeline-card {
+            background: var(--paper-raised);
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--amber);
+            border-radius: 0 14px 14px 0;
+            padding: 1.4rem 1.5rem 1.5rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .pipeline-card h3 {
+            font-family: 'Fraunces', serif;
+            font-weight: 500;
+            font-size: 1.15rem;
+            margin: 0 0 .5rem;
+            color: var(--amber-deep);
+        }
+
+        .pipeline-card p.pdesc-text {
+            font-size: 13.5px;
+            line-height: 1.7;
+            color: var(--ink-soft);
+            margin: 0 0 1rem;
+        }
+
+        .pipeline-card pre {
+            background: var(--spruce-deep);
+            color: #E9F3EE;
+            padding: 1.05rem 1.2rem;
+            border-radius: 9px;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12.5px;
+            line-height: 1.65;
+            margin: 0;
+        }
+
+        .pipeline-card .why {
+            margin-top: .9rem;
+            padding-top: .8rem;
+            border-top: 1px dashed var(--line);
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--ink-mute);
+        }
+
+        .pipeline-card .why b {
+            color: var(--ink-soft);
+            font-weight: 600;
+        }
+
+        .closer {
+            margin-top: 3.2rem;
+            padding: 2rem 2.1rem;
+            background: var(--spruce-deep);
+            border-radius: 14px;
+            color: #EAF2ED;
+        }
+
+        .closer .eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11.5px;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            color: #8FC4B0;
+            margin: 0 0 .8rem;
+        }
+
+        .closer p {
+            font-family: 'Fraunces', serif;
+            font-size: 1.1rem;
+            line-height: 1.65;
+            margin: 0;
+            font-weight: 400;
+        }
+
+        @media print {
+            body {
+                background: #fff;
+            }
+
+            .closer {
+                background: var(--spruce-tint);
+                color: var(--spruce-deep);
+            }
+        }
+
+        .note {
+            margin: 0 0 1.2rem;
+            padding: 1rem 1.1rem;
+            background: var(--spruce-tint);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--ink-soft);
+        }
+
+        .note strong {
+            color: var(--spruce-deep);
+        }
+
+        .mini-title {
+            font-family: 'Fraunces', serif;
+            font-size: 1.05rem;
+            color: var(--spruce-deep);
+            margin: 1.2rem 0 .55rem;
+        }
+
+        .compare {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin: .5rem 0 0;
+        }
+
+        .compare th {
+            text-align: left;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--ink-mute);
+            padding: .45rem .5rem;
+            border-bottom: 1px solid var(--line-strong);
+        }
+
+        .compare td {
+            padding: .45rem .5rem;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+            line-height: 1.55;
+        }
+
+        .badge {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            padding: .18rem .45rem;
+            border-radius: 12px;
+            background: var(--amber-tint);
+            color: var(--amber-deep);
+            margin-right: .25rem;
+        }
+
+        .formula {
+            background: var(--spruce-deep);
+            color: #E9F3EE;
+            border-radius: 8px;
+            padding: .75rem .9rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            margin: .6rem 0 1rem;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+
+        <div class="hero">
+            <p class="eyebrow">SKN AI 35기 · 머신러닝 종합 학습 노트</p>
+            <h1>머신러닝 전체를 한 장의 지도처럼</h1>
+            <p>모델 이름을 외우는 것보다 중요한 것은 <b>어떤 문제에 어떤 모델을 쓰고, 어떤 전처리가 필요하며, 어떤 하이퍼파라미터가 모델의 복잡도와 성능을 바꾸는지</b> 연결해서 이해하는 것이다.
+            </p>
+            <p>지금까지 공부한 회귀·분류·스케일링·차원축소·특성선택·앙상블·신경망·군집화·평가·튜닝을 모델별 서랍으로 나눴다. 각 서랍에는 목적, 주요값, 값의 방향, 스케일링 필요 여부를 함께
+                정리했다.</p>
+            <nav class="jump">
+                <a href="#flow">전체 흐름</a>
+                <a href="#preprocess">전처리</a>
+                <a href="#linear">선형·회귀</a>
+                <a href="#distance">거리·SVM</a>
+                <a href="#tree">트리·앙상블</a>
+                <a href="#nn">신경망</a>
+                <a href="#unsupervised">비지도학습</a>
+                <a href="#evaluation">평가</a>
+                <a href="#tuning">튜닝</a>
+            </nav>
+        </div>
+
+        <p class="section-label" id="flow">01 · 머신러닝 전체 흐름</p>
+
+        <div class="pipeline-card">
+            <h3>실전 기본 순서</h3>
+            <pre><code>데이터 확인
+  ↓
+결측치 / 이상치 / 중복 / 타입 확인
+  ↓
+X(특성) / y(타깃) 분리
+  ↓
+Train / Test 분리
+  ↓
+전처리
+  ├─ 결측치 처리
+  ├─ 범주형 인코딩
+  └─ 스케일링
+  ↓
+Feature Selection / PCA (필요한 경우)
+  ↓
+Baseline 모델
+  ↓
+Cross Validation
+  ↓
+하이퍼파라미터 튜닝
+  ↓
+최종 Test 평가</code></pre>
+            <p class="why"><b>핵심:</b> Test 데이터는 최종 평가용으로 최대한 건드리지 않는다. Scaling, PCA, Feature Selection처럼 데이터를 학습하는 전처리는
+                Train에만 <code>fit</code>하고 Test에는 <code>transform</code>만 적용해야 한다.</p>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <div class="top">
+                    <h2>지도학습</h2><span class="task clf">X → y</span>
+                </div>
+                <p class="desc">정답 y가 존재한다. 예측해야 할 값이 범주인지 숫자인지에 따라 분류와 회귀로 나뉜다.</p>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>문제</th>
+                            <th>대표 모델</th>
+                            <th>예시</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">분류</td>
+                        <td class="pdesc">Logistic, KNN, Tree, SVM, RF, XGBoost, LightGBM, MLP</td>
+                        <td class="pval">생존 / 사망</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">회귀</td>
+                        <td class="pdesc">Linear, Polynomial, Tree, KNN, SVR, RF, XGBoost, LightGBM, MLP</td>
+                        <td class="pval">가격 / 점수</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>비지도학습</h2><span class="task both">X만 존재</span>
+                </div>
+                <p class="desc">정답 y 없이 데이터의 구조를 찾는다.</p>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>목적</th>
+                            <th>방법</th>
+                            <th>핵심</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">군집화</td>
+                        <td class="pdesc">K-Means, Hierarchical, DBSCAN</td>
+                        <td class="pval">비슷한 데이터 그룹</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">차원축소</td>
+                        <td class="pdesc">PCA</td>
+                        <td class="pval">정보 유지 + 차원 감소</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <p class="section-label" id="preprocess">02 · 전처리 · 스케일링 · 특성선택 · 차원축소</p>
+
+        <div class="grid">
+
+            <div class="card">
+                <div class="top">
+                    <h2>StandardScaler</h2><span class="task both">스케일링</span>
+                </div>
+                <p class="desc">평균 0, 표준편차 1을 기준으로 특성의 크기를 맞춘다.</p>
+                <div class="formula">z = (x - μ) / σ</div>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>항목</th>
+                            <th>목적</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">fit</td>
+                        <td class="pdesc">Train의 평균·표준편차를 학습</td>
+                        <td class="pval">X_train</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">transform</td>
+                        <td class="pdesc">학습한 기준으로 데이터 변환</td>
+                        <td class="pval">X_train / X_test</td>
+                    </tr>
+                </table>
+                <p class="skip"><b>KNN, SVM, Logistic, MLP, PCA</b>처럼 거리·최적화·분산에 영향을 받는 모델에서 특히 중요. Tree 계열은 보통 불필요.</p>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>MinMaxScaler</h2><span class="task both">스케일링</span>
+                </div>
+                <p class="desc">각 특성을 지정한 범위로 압축한다. 기본 범위는 0~1.</p>
+                <div class="formula">x' = (x - min) / (max - min)</div>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>항목</th>
+                            <th>목적</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">feature_range</td>
+                        <td class="pdesc">변환할 최소·최대 범위</td>
+                        <td class="pval">(0,1), (-1,1)</td>
+                    </tr>
+                </table>
+                <p class="skip">이상치가 있으면 min/max 자체가 영향을 받는다. 범위를 일정하게 만들고 싶을 때 유용하다.</p>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>RobustScaler</h2><span class="task both">스케일링</span>
+                </div>
+                <p class="desc">평균·표준편차 대신 중앙값과 IQR을 사용해 이상치의 영향을 줄인다.</p>
+                <div class="formula">x' = (x - median) / IQR</div>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>항목</th>
+                            <th>목적</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">quantile_range</td>
+                        <td class="pdesc">IQR을 계산할 분위수 범위</td>
+                        <td class="pval">(25,75)</td>
+                    </tr>
+                </table>
+                <p class="skip">이상치가 많은 연속형 데이터에서 StandardScaler의 대안으로 고려한다.</p>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>One-Hot Encoding</h2><span class="task both">인코딩</span>
+                </div>
+                <p class="desc">순서가 없는 범주형 값을 0/1 컬럼으로 변환한다.</p>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>의미</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">handle_unknown</td>
+                        <td class="pdesc">Test에 처음 보는 범주가 등장했을 때 처리</td>
+                        <td class="pval">'ignore'</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">drop</td>
+                        <td class="pdesc">더미 변수 하나를 제거할지 결정</td>
+                        <td class="pval">None, 'first'</td>
+                    </tr>
+                </table>
+                <p class="skip">Pipeline + ColumnTransformer와 함께 사용하면 Train/Test 전처리 불일치를 줄일 수 있다.</p>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>Feature Selection</h2><span class="task both">차원 감소</span>
+                </div>
+                <p class="desc">원본 Feature 중 유용한 컬럼을 선택한다. PCA처럼 새 축을 만드는 것과 다르다.</p>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>방법</th>
+                            <th>목적</th>
+                            <th>핵심</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">Correlation</td>
+                        <td class="pdesc">타깃 또는 Feature 간 관계 확인</td>
+                        <td class="pval">상관계수</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">Feature Importance</td>
+                        <td class="pdesc">Tree 계열의 중요도 활용</td>
+                        <td class="pval">상위 K개</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">SelectKBest</td>
+                        <td class="pdesc">통계적 점수가 높은 K개 선택</td>
+                        <td class="pval">k=10,20...</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>PCA</h2><span class="task both">차원축소</span>
+                </div>
+                <p class="desc">원본 Feature를 버리는 것이 아니라 분산을 최대한 보존하는 새로운 주성분 축으로 압축한다.</p>
+                <code class="sig">PCA(n_components=2)</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>의미</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">n_components</td>
+                        <td class="pdesc">남길 주성분 개수 또는 보존할 분산 비율</td>
+                        <td class="pval">2, 5, 0.90, 0.95</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">whiten</td>
+                        <td class="pdesc">주성분을 추가로 정규화</td>
+                        <td class="pval">False / True</td>
+                    </tr>
+                </table>
+                <p class="skip"><b>보통 Scaling → PCA</b> 순서. PCA는 Feature의 스케일에 영향을 받는다. <code>n_components=0.95</code>처럼
+                    분산 보존율로 지정할 수도 있다.</p>
+            </div>
+
+        </div>
+
+        <p class="section-label" id="linear">03 · 선형 · 회귀 계열</p>
+
+        <div class="grid">
+
+            <div class="card">
+                <div class="top">
+                    <h2>Linear Regression</h2><span class="task reg">회귀</span>
+                </div>
+                <p class="desc">특성과 타깃 사이의 선형 관계를 찾는다.</p>
+                <code class="sig">LinearRegression(fit_intercept=True)</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>의미</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">fit_intercept</td>
+                        <td class="pdesc">절편을 학습할지 결정</td>
+                        <td class="pval">True / False</td>
+                    </tr>
+                </table>
+                <p class="skip">튜닝할 값이 거의 없다. 과적합을 제어하고 싶다면 Ridge/Lasso 같은 규제 모델을 고려한다.</p>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>Polynomial Regression</h2><span class="task reg">회귀</span>
+                </div>
+                <p class="desc">PolynomialFeatures로 기존 Feature를 제곱·세제곱 등 확장해 곡선 관계를 표현한다.</p>
+                <code class="sig">PolynomialFeatures(degree=2)</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>의미</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">degree</td>
+                        <td class="pdesc">다항식 차수. 높을수록 복잡</td>
+                        <td class="pval">2, 3, 4</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">include_bias</td>
+                        <td class="pdesc">상수항 컬럼을 추가할지 결정</td>
+                        <td class="pval">True / False</td>
+                    </tr>
+                </table>
+                <p class="skip">degree가 높아지면 Feature 수가 빠르게 증가해 과적합 가능성이 커진다.</p>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>Ridge / Lasso</h2><span class="task reg">회귀</span>
+                </div>
+                <p class="desc">선형 회귀에 규제를 추가한다. Ridge는 계수를 작게 만들고 Lasso는 일부 계수를 0으로 만들 수 있다.</p>
+                <code class="sig">Ridge(alpha=1.0)
+Lasso(alpha=1.0)</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>의미</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">alpha</td>
+                        <td class="pdesc">규제 강도. 클수록 강한 규제</td>
+                        <td class="pval">0.01, 0.1, 1, 10, 100</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>SVR</h2><span class="task reg">회귀</span>
+                </div>
+                <p class="desc">SVM의 회귀 버전. 일정 오차 범위 안의 예측은 허용하고 그 바깥의 오차를 줄인다.</p>
+                <code class="sig">SVR(C=1.0, epsilon=0.1, kernel='rbf')</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>의미</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">C</td>
+                        <td class="pdesc">규제 정도. 작을수록 더 단순</td>
+                        <td class="pval">0.1, 1, 10, 100</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">epsilon</td>
+                        <td class="pdesc">오차 허용 튜브 폭</td>
+                        <td class="pval">0.01, 0.1, 0.2</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">kernel</td>
+                        <td class="pdesc">경계/관계의 형태</td>
+                        <td class="pval">'linear','rbf','poly'</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">gamma</td>
+                        <td class="pdesc">RBF 영향 범위. 클수록 복잡</td>
+                        <td class="pval">'scale',0.01,0.1,1</td>
+                    </tr>
+                </table>
+                <p class="skip">KNN과 마찬가지로 거리 기반 성격이 있어 <b>스케일링이 중요</b>하다.</p>
+            </div>
+
+        </div>
+
+        <p class="section-label" id="distance">04 · 거리 기반 · 마진 기반</p>
+
+        <div class="grid">
+
+            <div class="card">
+                <div class="top">
+                    <h2>KNN</h2><span class="task both">분류·회귀</span>
+                </div>
+                <p class="desc">새 데이터 주변의 가까운 K개를 확인해 분류는 다수결, 회귀는 평균 등으로 예측한다.</p>
+                <code class="sig">KNeighborsClassifier(
+  n_neighbors=5,
+  weights='uniform',
+  metric='euclidean'
+)</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>목적</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">n_neighbors</td>
+                        <td class="pdesc">참고할 이웃 수. 작을수록 복잡</td>
+                        <td class="pval">3,5,7,9,11</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">weights</td>
+                        <td class="pdesc">이웃의 영향력 계산</td>
+                        <td class="pval">'uniform','distance'</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">metric</td>
+                        <td class="pdesc">거리 계산 방식</td>
+                        <td class="pval">'euclidean','manhattan'</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">p</td>
+                        <td class="pdesc">Minkowski 거리 지수</td>
+                        <td class="pval">1=Manhattan, 2=Euclidean</td>
+                    </tr>
+                </table>
+                <p class="skip"><b>스케일링 중요.</b> 학습 파라미터를 많이 가지지 않는 lazy learning 모델이다.</p>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>SVM / SVC</h2><span class="task both">분류·회귀</span>
+                </div>
+                <p class="desc">클래스 사이의 Margin을 최대화하는 경계를 찾고 Kernel을 통해 비선형 관계를 표현한다.</p>
+                <code class="sig">SVC(C=1.0, kernel='rbf', gamma='scale')</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>목적</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">C</td>
+                        <td class="pdesc">오분류에 대한 벌점. 클수록 복잡해지기 쉬움</td>
+                        <td class="pval">0.01,0.1,1,10,100</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">kernel</td>
+                        <td class="pdesc">선형/비선형 경계 방식</td>
+                        <td class="pval">'linear','rbf','poly'</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">gamma</td>
+                        <td class="pdesc">RBF에서 한 데이터의 영향 범위</td>
+                        <td class="pval">'scale',0.001,0.01,0.1,1</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">degree</td>
+                        <td class="pdesc">poly kernel의 차수</td>
+                        <td class="pval">2,3,4</td>
+                    </tr>
+                </table>
+                <p class="skip"><b>C ↑, gamma ↑</b>는 일반적으로 더 복잡한 경계를 만들 수 있다. <b>스케일링 필수에 가까움.</b></p>
+            </div>
+
+        </div>
+
+        <p class="section-label" id="prob">05 · 확률 · 선형 분류</p>
+
+        <div class="grid">
+
+            <div class="card">
+                <div class="top">
+                    <h2>Logistic Regression</h2><span class="task clf">분류</span>
+                </div>
+                <p class="desc">선형 결합을 sigmoid로 0~1 확률로 변환해 분류한다. Titanic의 생존 확률 예측처럼 확률을 직접 보고 싶을 때 특히 이해하기 좋다.</p>
+                <code class="sig">LogisticRegression(
+  C=1.0,
+  penalty='l2',
+  solver='lbfgs',
+  max_iter=1000
+)</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>목적</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">C</td>
+                        <td class="pdesc">규제의 역수. 작을수록 규제 강함</td>
+                        <td class="pval">0.01,0.1,1,10,100</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">penalty</td>
+                        <td class="pdesc">규제 방식</td>
+                        <td class="pval">'l1','l2','elasticnet'</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">solver</td>
+                        <td class="pdesc">최적화 알고리즘. penalty와 호환성 확인</td>
+                        <td class="pval">'lbfgs','liblinear','saga'</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">max_iter</td>
+                        <td class="pdesc">최대 반복 횟수</td>
+                        <td class="pval">500,1000,5000</td>
+                    </tr>
+                </table>
+                <p class="skip">예측 확률은 <code>predict_proba()</code>로 확인할 수 있다. 스케일링을 적용하면 최적화가 안정적이다.</p>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>Naive Bayes</h2><span class="task clf">분류</span>
+                </div>
+                <p class="desc">Bayes 정리와 특성 간 조건부 독립 가정을 이용한다. 빠르고 파라미터가 적다.</p>
+                <code class="sig">GaussianNB(var_smoothing=1e-9)</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>목적</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">var_smoothing</td>
+                        <td class="pdesc">작은 값을 분산에 더해 수치 안정성 확보</td>
+                        <td class="pval">1e-9,1e-8,1e-7</td>
+                    </tr>
+                </table>
+                <p class="skip">GaussianNB는 연속형 특성에 많이 사용. 모델 자체의 튜닝 부담이 작다.</p>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>LDA</h2><span class="task clf">분류</span>
+                </div>
+                <p class="desc">클래스 간 분산은 크게, 클래스 내부 분산은 작게 만드는 투영 방향을 찾는다.</p>
+                <code class="sig">LinearDiscriminantAnalysis(
+  solver='svd',
+  shrinkage=None
+)</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>목적</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">solver</td>
+                        <td class="pdesc">계산 방법</td>
+                        <td class="pval">'svd','lsqr','eigen'</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">shrinkage</td>
+                        <td class="pdesc">공분산 추정 안정화. 일부 solver에서 사용</td>
+                        <td class="pval">'auto', 0.1~0.9</td>
+                    </tr>
+                </table>
+            </div>
+
+        </div>
+
+        <p class="section-label" id="tree">06 · 트리 · 앙상블 계열</p>
+
+        <div class="grid">
+
+            <div class="card">
+                <div class="top">
+                    <h2>Decision Tree</h2><span class="task both">분류·회귀</span>
+                </div>
+                <p class="desc">조건을 반복해서 데이터를 나누며 규칙 기반의 예측 구조를 만든다.</p>
+                <code class="sig">DecisionTreeClassifier(
+  criterion='gini',
+  max_depth=5,
+  min_samples_split=10
+)</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>목적</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">criterion</td>
+                        <td class="pdesc">분할의 품질을 판단</td>
+                        <td class="pval">'gini','entropy','log_loss'</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">max_depth</td>
+                        <td class="pdesc">최대 깊이. 클수록 복잡</td>
+                        <td class="pval">3,5,10,None</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">min_samples_split</td>
+                        <td class="pdesc">노드를 나누기 위한 최소 샘플 수</td>
+                        <td class="pval">2,5,10,20</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">min_samples_leaf</td>
+                        <td class="pdesc">Leaf 최소 샘플 수. 클수록 보수적</td>
+                        <td class="pval">1,2,5,10</td>
+                    </tr>
+                </table>
+                <p class="skip"><b>스케일링 불필요.</b> max_depth를 무제한으로 두면 데이터에 지나치게 맞춰질 수 있다.</p>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>Random Forest</h2><span class="task both">분류·회귀</span>
+                </div>
+                <p class="desc">여러 Decision Tree를 독립적으로 만들고 결과를 결합하는 Bagging 계열 앙상블.</p>
+                <code class="sig">RandomForestClassifier(
+  n_estimators=100,
+  max_depth=10,
+  max_features='sqrt'
+)</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>목적</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">n_estimators</td>
+                        <td class="pdesc">Tree 개수. 많을수록 안정적이나 계산량 증가</td>
+                        <td class="pval">100,200,500</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">max_depth</td>
+                        <td class="pdesc">각 Tree의 최대 깊이</td>
+                        <td class="pval">5,10,20,None</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">max_features</td>
+                        <td class="pdesc">분할마다 고려할 Feature 수/비율</td>
+                        <td class="pval">'sqrt','log2',0.5</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">min_samples_leaf</td>
+                        <td class="pdesc">Leaf 최소 샘플 수</td>
+                        <td class="pval">1,2,5,10</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">oob_score</td>
+                        <td class="pdesc">Out-of-Bag 검증 점수 사용 여부</td>
+                        <td class="pval">True/False</td>
+                    </tr>
+                </table>
+                <p class="skip">스케일링 불필요. 단일 Tree보다 일반화 성능이 안정적인 경우가 많다.</p>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>XGBoost</h2><span class="task both">분류·회귀</span>
+                </div>
+                <p class="desc">이전 Tree의 오차를 다음 Tree가 보완하는 Gradient Boosting 계열. 지금까지 학습한 모델 중 튜닝 가치가 높은 대표 모델.</p>
+                <code class="sig">XGBClassifier(
+  n_estimators=300,
+  max_depth=3,
+  learning_rate=0.1,
+  subsample=0.8
+)</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>목적</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">n_estimators</td>
+                        <td class="pdesc">Boosting 단계/Tree 수</td>
+                        <td class="pval">100,300,500,1000</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">learning_rate</td>
+                        <td class="pdesc">각 Tree가 기여하는 크기. 작으면 더 많은 Tree 필요</td>
+                        <td class="pval">0.01,0.05,0.1,0.3</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">max_depth</td>
+                        <td class="pdesc">Tree 복잡도</td>
+                        <td class="pval">3,5,7,10</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">subsample</td>
+                        <td class="pdesc">Tree마다 사용할 데이터 비율</td>
+                        <td class="pval">0.6,0.8,1.0</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">colsample_bytree</td>
+                        <td class="pdesc">Tree마다 사용할 Feature 비율</td>
+                        <td class="pval">0.6,0.8,1.0</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">gamma</td>
+                        <td class="pdesc">추가 분할에 필요한 최소 손실 감소</td>
+                        <td class="pval">0,0.1,0.5,1</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">reg_alpha</td>
+                        <td class="pdesc">L1 규제</td>
+                        <td class="pval">0,0.01,0.1,1</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">reg_lambda</td>
+                        <td class="pdesc">L2 규제</td>
+                        <td class="pval">1,5,10</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">scale_pos_weight</td>
+                        <td class="pdesc">불균형 분류에서 Positive 클래스 가중치</td>
+                        <td class="pval">neg/pos 비율부터 탐색</td>
+                    </tr>
+                </table>
+                <p class="skip"><b>핵심 세트: learning_rate + n_estimators + max_depth.</b> 불균형 분류에서는 scale_pos_weight도
+                    중요하다.</p>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>LightGBM</h2><span class="task both">분류·회귀</span>
+                </div>
+                <p class="desc">Gradient Boosting 계열이며 Leaf-wise 성장 방식을 사용한다. 특히 num_leaves가 중요하다.</p>
+                <code class="sig">LGBMClassifier(
+  n_estimators=300,
+  learning_rate=0.05,
+  num_leaves=31
+)</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>목적</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">n_estimators</td>
+                        <td class="pdesc">Tree 수</td>
+                        <td class="pval">100,300,500,1000</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">learning_rate</td>
+                        <td class="pdesc">학습률. 낮으면 더 많은 Tree 필요</td>
+                        <td class="pval">0.01,0.05,0.1</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">num_leaves</td>
+                        <td class="pdesc">Tree의 Leaf 수. 클수록 복잡</td>
+                        <td class="pval">15,31,63,127</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">max_depth</td>
+                        <td class="pdesc">Tree 최대 깊이</td>
+                        <td class="pval">-1,3,5,10</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">min_child_samples</td>
+                        <td class="pdesc">Leaf 최소 데이터 수</td>
+                        <td class="pval">10,20,50,100</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">subsample</td>
+                        <td class="pdesc">사용할 데이터 비율</td>
+                        <td class="pval">0.6,0.8,1.0</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">colsample_bytree</td>
+                        <td class="pdesc">사용할 Feature 비율</td>
+                        <td class="pval">0.6,0.8,1.0</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">reg_alpha</td>
+                        <td class="pdesc">L1 규제</td>
+                        <td class="pval">0,0.01,0.1,1</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">reg_lambda</td>
+                        <td class="pdesc">L2 규제</td>
+                        <td class="pval">0,1,5,10</td>
+                    </tr>
+                </table>
+                <p class="skip"><b>num_leaves ↑ → 복잡도 ↑</b>. XGBoost의 max_depth와 비슷하게 과적합 관리의 핵심 축으로 본다.</p>
+            </div>
+
+        </div>
+
+        <p class="section-label" id="nn">07 · 신경망 계열</p>
+
+        <div class="grid">
+
+            <div class="card">
+                <div class="top">
+                    <h2>MLPClassifier</h2><span class="task clf">분류</span>
+                </div>
+                <p class="desc">입력층 → 은닉층 → 출력층으로 구성되는 다층 퍼셉트론. 스케일링이 중요하다.</p>
+                <code class="sig">MLPClassifier(
+  hidden_layer_sizes=(100,),
+  activation='relu',
+  solver='adam',
+  alpha=0.0001,
+  max_iter=1000
+)</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>목적</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">hidden_layer_sizes</td>
+                        <td class="pdesc">은닉층 수와 각 층의 뉴런 수</td>
+                        <td class="pval">(100,), (100,50), (64,32)</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">activation</td>
+                        <td class="pdesc">비선형성을 추가하는 활성화 함수</td>
+                        <td class="pval">'relu','tanh','logistic'</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">solver</td>
+                        <td class="pdesc">가중치를 최적화하는 방법</td>
+                        <td class="pval">'adam','sgd','lbfgs'</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">alpha</td>
+                        <td class="pdesc">L2 규제 강도</td>
+                        <td class="pval">0.0001,0.001,0.01</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">learning_rate_init</td>
+                        <td class="pdesc">초기 학습률</td>
+                        <td class="pval">0.0001,0.001,0.01</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">max_iter</td>
+                        <td class="pdesc">최대 반복 횟수</td>
+                        <td class="pval">500,1000,2000</td>
+                    </tr>
+                </table>
+                <p class="skip"><b>StandardScaler와 함께 사용하는 것이 일반적.</b> max_iter를 늘리는 것은 모델을 복잡하게 만드는 것과는 다른 문제다. 수렴할 시간을
+                    늘리는 것이다.</p>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>MLPRegressor</h2><span class="task reg">회귀</span>
+                </div>
+                <p class="desc">MLPClassifier와 구조는 비슷하지만 연속적인 숫자를 예측한다.</p>
+                <code class="sig">MLPRegressor(
+  hidden_layer_sizes=(100,),
+  activation='relu',
+  solver='adam',
+  alpha=0.0001
+)</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>목적</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">hidden_layer_sizes</td>
+                        <td class="pdesc">네트워크 구조</td>
+                        <td class="pval">(50,), (100,), (100,50)</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">activation</td>
+                        <td class="pdesc">은닉층 활성화 함수</td>
+                        <td class="pval">'relu','tanh'</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">solver</td>
+                        <td class="pdesc">최적화 알고리즘</td>
+                        <td class="pval">'adam','sgd','lbfgs'</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">alpha</td>
+                        <td class="pdesc">L2 규제</td>
+                        <td class="pval">0.0001,0.001,0.01</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">learning_rate_init</td>
+                        <td class="pdesc">학습률</td>
+                        <td class="pval">0.0001,0.001,0.01</td>
+                    </tr>
+                </table>
+                <p class="skip">분류/회귀 모두 스케일링이 중요하다. 출력층의 목적이 다르다는 점만 먼저 구분하면 된다.</p>
+            </div>
+
+        </div>
+
+        <p class="section-label" id="unsupervised">08 · 비지도학습 · 군집화</p>
+
+        <div class="grid">
+
+            <div class="card">
+                <div class="top">
+                    <h2>K-Means</h2><span class="task both">군집화</span>
+                </div>
+                <p class="desc">K개의 중심점을 기준으로 가까운 데이터끼리 반복적으로 묶는다.</p>
+                <code class="sig">KMeans(
+  n_clusters=3,
+  init='k-means++',
+  n_init=10
+)</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>목적</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">n_clusters</td>
+                        <td class="pdesc">만들 군집 수 K</td>
+                        <td class="pval">2,3,4,5...</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">init</td>
+                        <td class="pdesc">초기 중심점 선택 방법</td>
+                        <td class="pval">'k-means++','random'</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">n_init</td>
+                        <td class="pdesc">서로 다른 초기 중심점으로 반복 실행</td>
+                        <td class="pval">10,20,50</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">max_iter</td>
+                        <td class="pdesc">한 초기화에서 최대 반복 횟수</td>
+                        <td class="pval">100,300,500</td>
+                    </tr>
+                </table>
+                <p class="skip">거리 기반이므로 <b>스케일링이 중요</b>. K는 Silhouette 등으로 비교하며 선택할 수 있다.</p>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>Hierarchical Clustering</h2><span class="task both">군집화</span>
+                </div>
+                <p class="desc">데이터를 하나씩 병합하며 계층 구조를 만들고 Dendrogram을 통해 군집 구조를 확인한다.</p>
+                <code class="sig">pdist(data, metric='cosine')
+linkage(distance_matrix, method='average')</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>목적</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">metric</td>
+                        <td class="pdesc">두 데이터 사이 거리</td>
+                        <td class="pval">'euclidean','cosine','manhattan'</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">method</td>
+                        <td class="pdesc">군집 간 거리 계산 방식</td>
+                        <td class="pval">'single','complete','average','ward'</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">criterion</td>
+                        <td class="pdesc">fcluster가 군집을 자르는 기준</td>
+                        <td class="pval">'distance','maxclust'</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">t</td>
+                        <td class="pdesc">criterion에 따른 임계값</td>
+                        <td class="pval">예: 0.5 / 3</td>
+                    </tr>
+                </table>
+                <p class="skip"><b>Cosine distance</b>는 벡터의 방향 유사성을 볼 때 유용. <code>ward</code>는 일반적으로 Euclidean 거리 기반에서
+                    사용한다.</p>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>DBSCAN</h2><span class="task both">군집화</span>
+                </div>
+                <p class="desc">밀도가 높은 영역을 군집으로 묶고, 외딴 데이터는 Noise로 분류할 수 있다.</p>
+                <code class="sig">DBSCAN(
+  eps=0.5,
+  min_samples=5
+)</code>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>파라미터</th>
+                            <th>목적</th>
+                            <th>주요값</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">eps</td>
+                        <td class="pdesc">이웃으로 인정하는 최대 거리</td>
+                        <td class="pval">0.1,0.3,0.5,1.0</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">min_samples</td>
+                        <td class="pdesc">핵심 포인트가 되기 위한 최소 이웃 수</td>
+                        <td class="pval">3,5,10,20</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">metric</td>
+                        <td class="pdesc">거리 계산 방법</td>
+                        <td class="pval">'euclidean','manhattan'</td>
+                    </tr>
+                </table>
+                <p class="skip">K를 미리 지정하지 않아도 되며 Noise 탐지가 가능하다. eps와 min_samples의 조합이 핵심이다.</p>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>Cosine Distance</h2><span class="task both">거리</span>
+                </div>
+                <p class="desc">두 벡터의 방향이 얼마나 다른지를 측정한다. 텍스트·고차원 벡터처럼 크기보다 방향이 중요한 경우 자주 고려한다.</p>
+                <div class="formula">Cosine Distance = 1 - Cosine Similarity</div>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>값</th>
+                            <th>의미</th>
+                            <th>방향</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">Similarity ≈ 1</td>
+                        <td class="pdesc">방향이 매우 유사</td>
+                        <td class="pval">유사 ↑</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">Distance ≈ 0</td>
+                        <td class="pdesc">거리가 매우 가까움</td>
+                        <td class="pval">유사 ↑</td>
+                    </tr>
+                </table>
+            </div>
+
+        </div>
+
+        <div class="pipeline-card">
+            <h3>현재 실습 코드의 구조</h3>
+            <pre><code>data
+  ↓
+pdist(data, metric='cosine')
+  ↓
+linkage(distance_matrix, method='average')
+  ↓
+fcluster(Z, criterion='distance', t=0.5)
+  ↓
+Cluster Label
+  ↓
+Silhouette Score
+Calinski-Harabasz Index
+Davies-Bouldin Index</code></pre>
+            <p class="why"><b>평가 조건:</b> 군집 평가 지표는 일반적으로 최소 2개 이상이면서 데이터 개수보다 적은 군집이 필요하다. 현재 실습처럼 정답 y가 없는 상황에서도 군집
+                내부/군집 간 구조를 기준으로 품질을 비교할 수 있다.</p>
+        </div>
+
+        <p class="section-label" id="evaluation">09 · 모델 평가 지표</p>
+
+        <div class="grid">
+
+            <div class="card">
+                <div class="top">
+                    <h2>분류 평가</h2><span class="task clf">Classification</span>
+                </div>
+                <p class="desc">무엇을 중요하게 보느냐에 따라 Accuracy보다 Precision, Recall, F1, ROC-AUC가 더 적절할 수 있다.</p>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>지표</th>
+                            <th>의미</th>
+                            <th>좋은 방향</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">Accuracy</td>
+                        <td class="pdesc">전체 중 맞춘 비율</td>
+                        <td class="pval">↑</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">Precision</td>
+                        <td class="pdesc">Positive 예측 중 실제 Positive 비율</td>
+                        <td class="pval">↑</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">Recall</td>
+                        <td class="pdesc">실제 Positive 중 찾아낸 비율</td>
+                        <td class="pval">↑</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">F1</td>
+                        <td class="pdesc">Precision과 Recall의 조화평균</td>
+                        <td class="pval">↑</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">ROC-AUC</td>
+                        <td class="pdesc">클래스 구분 능력</td>
+                        <td class="pval">1에 가까울수록 ↑</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>Confusion Matrix</h2><span class="task clf">분류</span>
+                </div>
+                <p class="desc">모델이 어떤 종류의 실수를 하는지 확인하는 표.</p>
+                <table class="compare">
+                    <tr>
+                        <th></th>
+                        <th>실제 Positive</th>
+                        <th>실제 Negative</th>
+                    </tr>
+                    <tr>
+                        <td><b>예측 Positive</b></td>
+                        <td>TP</td>
+                        <td>FP</td>
+                    </tr>
+                    <tr>
+                        <td><b>예측 Negative</b></td>
+                        <td>FN</td>
+                        <td>TN</td>
+                    </tr>
+                </table>
+                <p class="skip"><b>Precision은 FP</b>, <b>Recall은 FN</b>과 직접 연결해서 이해하면 쉽다.</p>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>회귀 평가</h2><span class="task reg">Regression</span>
+                </div>
+                <p class="desc">예측값과 실제값의 차이를 측정한다.</p>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>지표</th>
+                            <th>의미</th>
+                            <th>좋은 방향</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">MAE</td>
+                        <td class="pdesc">절댓값 오차 평균</td>
+                        <td class="pval">↓</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">MSE</td>
+                        <td class="pdesc">제곱 오차 평균. 큰 오차에 민감</td>
+                        <td class="pval">↓</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">RMSE</td>
+                        <td class="pdesc">MSE의 제곱근. y와 같은 단위</td>
+                        <td class="pval">↓</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">R²</td>
+                        <td class="pdesc">설명된 분산의 비율에 가까운 지표</td>
+                        <td class="pval">↑</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>군집 평가</h2><span class="task both">Unsupervised</span>
+                </div>
+                <p class="desc">정답 y가 없으므로 군집 내부의 응집도와 군집 간 분리도를 평가한다.</p>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>지표</th>
+                            <th>의미</th>
+                            <th>좋은 방향</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">Silhouette</td>
+                        <td class="pdesc">자기 군집과 다른 군집의 거리 비교</td>
+                        <td class="pval">높을수록 좋음</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">Calinski-Harabasz</td>
+                        <td class="pdesc">군집 간 분산 / 군집 내부 분산 관점</td>
+                        <td class="pval">높을수록 좋음</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">Davies-Bouldin</td>
+                        <td class="pdesc">군집 간 유사성/겹침 정도</td>
+                        <td class="pval">낮을수록 좋음</td>
+                    </tr>
+                </table>
+            </div>
+
+        </div>
+
+        <p class="section-label" id="tuning">10 · Cross Validation · Pipeline · 하이퍼파라미터 튜닝</p>
+
+        <div class="pipeline-card">
+            <h3>Cross Validation</h3>
+            <pre><code>Training Data
+     ↓
+┌────────┬────────┬────────┬────────┬────────┐
+│ Fold 1 │ Fold 2 │ Fold 3 │ Fold 4 │ Fold 5 │
+└────────┴────────┴────────┴────────┴────────┘
+   검증       검증       검증       검증       검증
+     ↓
+평균 Validation Score</code></pre>
+            <p class="why"><b>cv=5</b>라면 5-Fold Cross Validation. 하나의 Train/Test Split에만 결과가 좌우되는 것을 줄이고, 하이퍼파라미터 조합을
+                비교할 때 더 안정적인 기준을 제공한다.</p>
+        </div>
+
+        <div class="pipeline-card">
+            <h3>Pipeline — 전처리와 모델을 하나로</h3>
+            <pre><code>from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+
+pipe = Pipeline([
+    ('scaler', StandardScaler()),
+    ('model', SVC())
+])
+
+pipe.fit(X_train, y_train)
+pipe.predict(X_test)</code></pre>
+            <p class="why"><b>핵심:</b> scaler가 Train으로 fit되고 Test에서는 transform만 수행되는 흐름을 Pipeline이 관리한다. 특히 Cross
+                Validation에서 전처리가 검증 데이터까지 미리 학습되는 Data Leakage를 막는 데 중요하다.</p>
+        </div>
+
+        <div class="pipeline-card">
+            <h3>ColumnTransformer — 컬럼마다 다른 전처리</h3>
+            <pre><code>from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+
+num_cols = ['age', 'income']
+cat_cols = ['gender', 'region']
+
+preprocessor = ColumnTransformer([
+    ('num', StandardScaler(), num_cols),
+    ('cat', OneHotEncoder(handle_unknown='ignore'), cat_cols)
+])</code></pre>
+            <p class="why"><b>수치형 → Scaling</b>, <b>범주형 → Encoding</b>처럼 컬럼별로 처리 방식을 다르게 적용할 수 있다.
+                <code>handle_unknown='ignore'</code>는 Test에 Train에서 보지 못한 범주가 등장해도 변환 과정에서 오류가 나는 것을 막는다.
+            </p>
+        </div>
+
+        <div class="pipeline-card">
+            <h3>GridSearchCV</h3>
+            <pre><code>param_grid = {
+    'model__C': [0.1, 1, 10],
+    'model__gamma': ['scale', 0.01, 0.1]
+}
+
+grid = GridSearchCV(
+    pipe,
+    param_grid,
+    cv=5,
+    scoring='f1',
+    n_jobs=-1
+)
+
+grid.fit(X_train, y_train)
+
+grid.best_params_
+grid.best_score_
+grid.best_estimator_</code></pre>
+            <p class="why"><b>model__파라미터</b>처럼 Pipeline 단계 이름을 앞에 붙인다. 예를 들어 모델 단계 이름이 <code>model</code>이면
+                <code>model__C</code>가 된다. <code>scoring='f1'</code>이면 F1이 가장 높은 조합을 찾는다.
+            </p>
+        </div>
+
+        <div class="pipeline-card">
+            <h3>RandomizedSearchCV</h3>
+            <pre><code>search = RandomizedSearchCV(
+    pipe,
+    param_distributions=param_dist,
+    n_iter=20,
+    cv=5,
+    scoring='f1',
+    random_state=42,
+    n_jobs=-1
+)</code></pre>
+            <p class="why"><b>GridSearchCV</b>는 모든 조합을 검사하고, <b>RandomizedSearchCV</b>는 지정한 횟수만큼 일부 조합을 랜덤하게 검사한다.
+                XGBoost·LightGBM처럼 탐색 공간이 넓은 모델에서 계산량을 줄이는 데 유리하다.</p>
+        </div>
+
+        <p class="section-label">11 · 하이퍼파라미터 방향성</p>
+
+        <div class="grid">
+
+            <div class="card">
+                <div class="top">
+                    <h2>복잡도를 조절하는 파라미터</h2><span class="task both">핵심</span>
+                </div>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>모델</th>
+                            <th>대표 파라미터</th>
+                            <th>대체적인 방향</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">KNN</td>
+                        <td class="pdesc">n_neighbors</td>
+                        <td class="pval">K ↑ → 단순</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">Tree</td>
+                        <td class="pdesc">max_depth</td>
+                        <td class="pval">↑ → 복잡</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">SVM</td>
+                        <td class="pdesc">C, gamma</td>
+                        <td class="pval">↑ → 복잡 가능</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">XGBoost</td>
+                        <td class="pdesc">max_depth</td>
+                        <td class="pval">↑ → 복잡</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">LightGBM</td>
+                        <td class="pdesc">num_leaves</td>
+                        <td class="pval">↑ → 복잡</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">MLP</td>
+                        <td class="pdesc">hidden_layer_sizes</td>
+                        <td class="pval">뉴런/층 ↑ → 복잡</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>규제 파라미터</h2><span class="task both">과적합 제어</span>
+                </div>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>모델</th>
+                            <th>파라미터</th>
+                            <th>기억법</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">Logistic / SVM</td>
+                        <td class="pdesc">C</td>
+                        <td class="pval">C ↓ → 규제 ↑</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">Ridge / Lasso</td>
+                        <td class="pdesc">alpha</td>
+                        <td class="pval">alpha ↑ → 규제 ↑</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">MLP</td>
+                        <td class="pdesc">alpha</td>
+                        <td class="pval">alpha ↑ → 규제 ↑</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">XGBoost</td>
+                        <td class="pdesc">reg_alpha / reg_lambda</td>
+                        <td class="pval">↑ → 규제 ↑</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">LightGBM</td>
+                        <td class="pdesc">reg_alpha / reg_lambda</td>
+                        <td class="pval">↑ → 규제 ↑</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>Boosting의 핵심 조합</h2><span class="task both">XGB · LGBM</span>
+                </div>
+                <div class="formula">learning_rate ↓ ↔ n_estimators ↑</div>
+                <p class="desc">한 번에 조금씩 학습시키면 더 많은 Tree가 필요하다. 반대로 학습률이 크면 적은 Tree로도 빠르게 학습하지만 과적합 위험을 더 세심하게 확인해야 한다.
+                </p>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>목적</th>
+                            <th>파라미터</th>
+                            <th>예시</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">학습 속도/크기</td>
+                        <td class="pdesc">learning_rate</td>
+                        <td class="pval">0.01~0.3</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">학습 단계</td>
+                        <td class="pdesc">n_estimators</td>
+                        <td class="pval">100~1000</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">Tree 복잡도</td>
+                        <td class="pdesc">max_depth / num_leaves</td>
+                        <td class="pval">작게 시작</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>스케일링 필요성</h2><span class="task both">전처리</span>
+                </div>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>모델</th>
+                            <th>스케일링</th>
+                            <th>이유</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">KNN</td>
+                        <td class="pdesc">★★★★★</td>
+                        <td class="pval">거리 기반</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">SVM / SVR</td>
+                        <td class="pdesc">★★★★★</td>
+                        <td class="pval">거리·마진·Kernel</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">Logistic</td>
+                        <td class="pdesc">★★★★☆</td>
+                        <td class="pval">최적화 안정성</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">MLP</td>
+                        <td class="pdesc">★★★★★</td>
+                        <td class="pval">신경망 최적화</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">PCA</td>
+                        <td class="pdesc">★★★★★</td>
+                        <td class="pval">분산 기준</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">Tree / RF / XGB / LGBM</td>
+                        <td class="pdesc">보통 불필요</td>
+                        <td class="pval">분할 기준</td>
+                    </tr>
+                </table>
+            </div>
+
+        </div>
+
+        <p class="section-label">12 · 과적합 / 과소적합</p>
+
+        <div class="grid">
+
+            <div class="card">
+                <div class="top">
+                    <h2>Overfitting</h2><span class="task clf">과적합</span>
+                </div>
+                <p class="desc">Train 데이터의 세부 패턴과 노이즈까지 지나치게 학습한 상태.</p>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>증상</th>
+                            <th>대응</th>
+                            <th>예</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">Train ↑ / Test ↓</td>
+                        <td class="pdesc">복잡도 감소</td>
+                        <td class="pval">depth ↓</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">모델 너무 복잡</td>
+                        <td class="pdesc">규제 강화</td>
+                        <td class="pval">alpha ↑</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">Noise Feature 많음</td>
+                        <td class="pdesc">Feature Selection</td>
+                        <td class="pval">상위 K개</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="top">
+                    <h2>Underfitting</h2><span class="task reg">과소적합</span>
+                </div>
+                <p class="desc">모델이 데이터의 구조를 충분히 학습하지 못한 상태.</p>
+                <table class="ptable">
+                    <thead>
+                        <tr>
+                            <th>증상</th>
+                            <th>대응</th>
+                            <th>예</th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="pname">Train ↓ / Test ↓</td>
+                        <td class="pdesc">복잡도 증가</td>
+                        <td class="pval">depth ↑</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">규제 너무 강함</td>
+                        <td class="pdesc">규제 완화</td>
+                        <td class="pval">alpha ↓</td>
+                    </tr>
+                    <tr>
+                        <td class="pname">Feature 부족</td>
+                        <td class="pdesc">유용한 Feature 추가</td>
+                        <td class="pval">K ↑</td>
+                    </tr>
+                </table>
+            </div>
+
+        </div>
+
+        <p class="section-label">13 · 모델 선택 빠른 기준</p>
+
+        <div class="card">
+            <table class="compare">
+                <tr>
+                    <th>상황</th>
+                    <th>우선 고려</th>
+                    <th>핵심 이유</th>
+                </tr>
+                <tr>
+                    <td><b>선형적인 관계</b></td>
+                    <td>Linear / Logistic</td>
+                    <td>단순하고 해석하기 쉬움</td>
+                </tr>
+                <tr>
+                    <td><b>규칙으로 설명</b></td>
+                    <td>Decision Tree</td>
+                    <td>분할 규칙을 시각적으로 이해하기 쉬움</td>
+                </tr>
+                <tr>
+                    <td><b>강력한 표 형태 데이터</b></td>
+                    <td>XGBoost / LightGBM</td>
+                    <td>비선형 관계와 Feature 상호작용에 강함</td>
+                </tr>
+                <tr>
+                    <td><b>거리 기반</b></td>
+                    <td>KNN</td>
+                    <td>가까운 데이터의 패턴 활용</td>
+                </tr>
+                <tr>
+                    <td><b>마진 기반 분류</b></td>
+                    <td>SVM</td>
+                    <td>경계와 Kernel 활용</td>
+                </tr>
+                <tr>
+                    <td><b>복잡한 비선형 관계</b></td>
+                    <td>MLP</td>
+                    <td>은닉층으로 비선형 패턴 학습</td>
+                </tr>
+                <tr>
+                    <td><b>정답 없는 그룹화</b></td>
+                    <td>K-Means / Hierarchical / DBSCAN</td>
+                    <td>데이터 구조 자체를 탐색</td>
+                </tr>
+                <tr>
+                    <td><b>Feature가 너무 많음</b></td>
+                    <td>PCA / Feature Selection</td>
+                    <td>차원과 노이즈 감소</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="closer">
+            <p class="eyebrow">기억할 것</p>
+            <p>하이퍼파라미터는 전부 외우는 대상이 아니다. 먼저 <b>모델의 복잡도</b>, <b>규제</b>, <b>학습 속도</b>, <b>데이터·Feature 사용량</b>, <b>거리
+                    계산</b>, <b>Tree 구조</b>, <b>신경망 구조</b> 중 무엇을 조절하는지 이해하면 된다. 그리고 실제 조합 탐색은 Pipeline + Cross Validation
+                + GridSearchCV 또는 RandomizedSearchCV에 맡기면 된다.</p>
+        </div>
+
+    </div>
+
+</body>
+
+</html>
